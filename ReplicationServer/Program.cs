@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 var version = LuceneVersion.LUCENE_48;
 var indexPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "LuceneIndex");
@@ -42,6 +43,25 @@ writer.Commit();
 // Setup replicator
 var replicator = new LocalReplicator();
 replicator.Publish(new IndexRevision(writer));
+
+_ = Task.Run(async () =>
+{
+    int counter = 4;
+    while (true)
+    {
+        await Task.Delay(5000); // every 5 seconds
+        var doc = new Document
+        {
+            new StringField("id", $"doc-{counter}", Field.Store.YES),
+            new TextField("content", $"Lucene doc {counter}", Field.Store.YES)
+        };
+        writer.UpdateDocument(new Term("id", $"doc-{counter}"), doc);
+        writer.Commit();
+        replicator.Publish(new IndexRevision(writer));
+        Console.WriteLine($"✅ Published revision: doc-{counter}");
+        counter++;
+    }
+});
 
 // Configure ASP.NET Core
 var builder = WebApplication.CreateBuilder(args);
