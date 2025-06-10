@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Text.Json.Nodes;
+using Markdig;
 
 var version = LuceneVersion.LUCENE_48;
 var indexPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "LuceneIndex");
@@ -28,15 +30,27 @@ var sdp = new SnapshotDeletionPolicy(new KeepOnlyLastCommitDeletionPolicy());
 var config = new IndexWriterConfig(version, analyzer) { IndexDeletionPolicy = sdp };
 using var writer = new IndexWriter(dir, config);
 
-// Add sample documents
-for (int i = 1; i <= 3; i++)
+// Load issues.json
+var jsonPath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), "issues.json");
+var json = JsonNode.Parse(File.ReadAllText(jsonPath)).AsArray();
+
+int docCounter = 1;
+foreach (var issue in json)
 {
+    string id = issue["id"]?.ToString() ?? docCounter.ToString();
+    string title = issue["title"]?.ToString() ?? "";
+    string bodyMarkdown = issue["body"]?.ToString() ?? "";
+    string bodyText = Markdown.ToPlainText(bodyMarkdown);
+
     var doc = new Document
     {
-        new StringField("id", $"doc-{i}", Field.Store.YES),
-        new TextField("content", $"Lucene doc {i}", Field.Store.YES)
+        new StringField("id", id, Field.Store.YES),
+        new TextField("title", title, Field.Store.YES),
+        new TextField("body", bodyText, Field.Store.YES)
     };
-    writer.UpdateDocument(new Term("id", $"doc-{i}"), doc);
+
+    writer.UpdateDocument(new Term("id", id), doc);
+    docCounter++;
 }
 writer.Commit();
 
@@ -46,16 +60,17 @@ replicator.Publish(new IndexRevision(writer));
 
 _ = Task.Run(async () =>
 {
-    int counter = 4;
+    int counter = 10000;
     while (true)
     {
-        await Task.Delay(5000); // every 5 seconds
+        await Task.Delay(10000); // every 5 seconds
         var doc = new Document
         {
-            new StringField("id", $"doc-{counter}", Field.Store.YES),
-            new TextField("content", $"Lucene doc {counter}", Field.Store.YES)
-        };
-        writer.UpdateDocument(new Term("id", $"doc-{counter}"), doc);
+            new StringField("id", counter.ToString(), Field.Store.YES),
+            new TextField("title", $"Auto generated #{counter}", Field.Store.YES),
+            new TextField("body", $"This is a periodic doc {counter}", Field.Store.YES)
+      };
+        writer.UpdateDocument(new Term("id", counter.ToString()), doc);
         writer.Commit();
         replicator.Publish(new IndexRevision(writer));
         Console.WriteLine($"✅ Published revision: doc-{counter}");

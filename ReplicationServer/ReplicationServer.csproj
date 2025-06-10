@@ -11,6 +11,8 @@
     <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
     
     <PackageReference Include="Lucene.Net.Replicator" Version="4.8.0-beta00017" />
+    
+    <PackageReference Include="Markdig" Version="0.41.2" />
   
   </ItemGroup>
 
