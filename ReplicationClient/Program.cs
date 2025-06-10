@@ -7,35 +7,55 @@ using System;
 using System.Net.Http;
 using System.Threading;
 
-// var version = LuceneVersion.LUCENE_48;
-var slavePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "ClientIndex");
-var tempPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Temp");
+Thread.Sleep(1000); // Give server a second to start
 
-if (System.IO.Directory.Exists(slavePath)) System.IO.Directory.Delete(slavePath, true);
-if (System.IO.Directory.Exists(tempPath)) System.IO.Directory.Delete(tempPath, true);
-System.IO.Directory.CreateDirectory(slavePath);
-System.IO.Directory.CreateDirectory(tempPath);
+StartReplicationClient("ClientA");
+StartReplicationClient("ClientB");
+StartReplicationClient("ClientC");
 
-var slaveDir = FSDirectory.Open(slavePath);
-var handler = new IndexReplicationHandler(slaveDir, null);
-var factory = new PerSessionDirectoryFactory(tempPath);
+// Prevent app from exiting
+Console.ReadLine();
 
-Thread.Sleep(1000); // Ensure server is up
 
-var replicator = new HttpReplicator("http://localhost:5000/replicate/default", new HttpClient());
-var client = new ReplicationClient(replicator, handler, factory);
 
-try
+void StartReplicationClient(string clientName)
 {
-    client.UpdateNow();
-    using var reader = DirectoryReader.Open(slaveDir);
-    Console.WriteLine($"📚 Found {reader.MaxDoc} docs:");
-    for (int i = 0; i < reader.MaxDoc; i++)
-        Console.WriteLine($"📄 {reader.Document(i).Get("id")} => {reader.Document(i).Get("content")}");
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"❌ Error: {ex.Message}");
+    var basePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), clientName);
+    var indexPath = System.IO.Path.Combine(basePath, "ClientIndex");
+    var tempPath = System.IO.Path.Combine(basePath, "Temp");
+
+    if (System.IO.Directory.Exists(indexPath)) System.IO.Directory.Delete(indexPath, true);
+    if (System.IO.Directory.Exists(tempPath)) System.IO.Directory.Delete(tempPath, true);
+    System.IO.Directory.CreateDirectory(indexPath);
+    System.IO.Directory.CreateDirectory(tempPath);
+
+    var replicaDirectory = FSDirectory.Open(indexPath);
+    var handler = new IndexReplicationHandler(replicaDirectory, null);
+    var factory = new PerSessionDirectoryFactory(tempPath);
+    var replicator = new HttpReplicator("http://localhost:5000/replicate/default", new HttpClient());
+    var client = new ReplicationClient(replicator, handler, factory);
+
+    Task.Run(async () =>
+    {
+        while (true)
+        {
+            try
+            {
+                client.UpdateNow();
+                using var reader = DirectoryReader.Open(replicaDirectory);
+                Console.WriteLine($"🔁 [{clientName}] Found {reader.MaxDoc} docs:");
+                for (int i = 0; i < reader.MaxDoc; i++)
+                {
+                    Console.WriteLine($"📄 [{clientName}] {reader.Document(i).Get("id")} => {reader.Document(i).Get("content")}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ [{clientName}] Error: {ex.Message}");
+            }
+            await Task.Delay(7000); // poll every 7 seconds
+        }
+    });
 }
 
 
