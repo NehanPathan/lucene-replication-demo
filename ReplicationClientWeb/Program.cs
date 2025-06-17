@@ -4,18 +4,19 @@ using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add replication client using your extension method
+// Add support for HttpClientFactory
+builder.Services.AddHttpClient();
+
+// Add replication client using the extension method
 builder.Services.AddLuceneReplicationClient(options =>
 {
-    options.ServerUrl = "http://localhost:5000";
-    options.IndexPath = "C:\\LuceneIndexes";
+    options.ServerUrl = "http://localhost:5000/replicate/default";
+    options.IndexPath = "./Client/Index";
+    options.TempPath = "./Client/Temp";
 });
 
-// Optional logging
+// Optional: console logging
 builder.Services.AddLogging(logging => logging.AddConsole());
 
 var app = builder.Build();
-
-app.MapGet("/", () => "Replication Client Running!");
-
 app.Run();

@@ -4,6 +4,11 @@ using Microsoft.Extensions.Options;
 using ReplicationClientWeb.Options;
 using System.Threading;
 using System.Threading.Tasks;
+using Lucene.Net.Store;
+using Lucene.Net.Replicator;
+using Lucene.Net.Replicator.Http;
+using Lucene.Net.Index;
+using System.Net.Http;
 
 namespace ReplicationClientWeb.Services
 {
@@ -11,28 +16,52 @@ namespace ReplicationClientWeb.Services
     {
         private readonly ILogger<ReplicationClientService> _logger;
         private readonly ReplicationClientOptions _options;
+        private readonly HttpClient _httpClient;
 
         public ReplicationClientService(
             ILogger<ReplicationClientService> logger,
-            IOptions<ReplicationClientOptions> options)
+            IOptions<ReplicationClientOptions> options,
+            IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _options = options.Value;
+            _httpClient = httpClientFactory.CreateClient();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("ReplicationClientService is running.");
-            _logger.LogInformation("Server URL: {ServerUrl}", _options.ServerUrl);
-            _logger.LogInformation("Index Path: {IndexPath}", _options.IndexPath);
+            var replicaDirectory = FSDirectory.Open(_options.IndexPath);
+            var handler = new IndexReplicationHandler(replicaDirectory, null);
+            var factory = new PerSessionDirectoryFactory(_options.TempPath);
+            var replicator = new HttpReplicator(_options.ServerUrl, _httpClient);
+            var client = new ReplicationClient(replicator, handler, factory);
+
+            _logger.LogInformation("Client pulling from {ServerUrl}", _options.ServerUrl);
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Replicating from {ServerUrl} into {IndexPath}...", _options.ServerUrl, _options.IndexPath);
-                await Task.Delay(5000, stoppingToken);
-            }
+                try
+                {
+                    client.UpdateNow();
+                    _logger.LogInformation("Replication successful.");
 
-            _logger.LogInformation("ReplicationClientService is stopping.");
+                    try
+                    {
+                        using var reader = DirectoryReader.Open(replicaDirectory);
+                        _logger.LogInformation("Client index now has {DocCount} docs", reader.NumDocs);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Unable to open index reader (possibly not ready yet).");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Replication failed");
+                }
+
+                await Task.Delay(10000, stoppingToken);
+            }
         }
     }
 }

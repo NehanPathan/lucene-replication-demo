@@ -10,7 +10,7 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddLuceneReplicationServer(options =>
         {
             options.Port = 5000;
-            options.IndexPath = @"C:\LuceneIndexes\Server";
+            options.IndexPath = "./Server/Index";
         });
 
         services.AddLogging(logging =>
