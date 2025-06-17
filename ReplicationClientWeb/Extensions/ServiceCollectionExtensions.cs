@@ -7,7 +7,7 @@ namespace ReplicationClientWeb.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddReplicationClient(this IServiceCollection services, Action<ReplicationClientOptions> configureOptions)
+        public static IServiceCollection AddLuceneReplicationClient(this IServiceCollection services, Action<ReplicationClientOptions> configureOptions)
         {
             services.Configure(configureOptions);
             services.AddHostedService<ReplicationClientService>();

@@ -23,12 +23,12 @@ namespace ReplicationClientWeb.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("ReplicationClientService is running.");
-            _logger.LogInformation("Leader URL: {LeaderUrl}", _options.LeaderUrl);
+            _logger.LogInformation("Server URL: {ServerUrl}", _options.ServerUrl);
             _logger.LogInformation("Index Path: {IndexPath}", _options.IndexPath);
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Replicating from {LeaderUrl} into {IndexPath}...", _options.LeaderUrl, _options.IndexPath);
+                _logger.LogInformation("Replicating from {ServerUrl} into {IndexPath}...", _options.ServerUrl, _options.IndexPath);
                 await Task.Delay(5000, stoppingToken);
             }
 

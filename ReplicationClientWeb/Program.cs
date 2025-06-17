@@ -5,9 +5,9 @@ using Microsoft.Extensions.Logging;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add replication client using your extension method
-builder.Services.AddReplicationClient(options =>
+builder.Services.AddLuceneReplicationClient(options =>
 {
-    options.LeaderUrl = "http://localhost:5000";
+    options.ServerUrl = "http://localhost:5000";
     options.IndexPath = "C:\\LuceneIndexes";
 });
 

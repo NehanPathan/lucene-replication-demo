@@ -7,7 +7,7 @@ using ReplicationServerWorker.Extensions;
 var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
-        services.AddReplicationServer(options =>
+        services.AddLuceneReplicationServer(options =>
         {
             options.Port = 5000;
             options.IndexPath = @"C:\LuceneIndexes\Server";
