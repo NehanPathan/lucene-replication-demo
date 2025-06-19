@@ -17,6 +17,7 @@ namespace ReplicationClientWeb.Services
         private readonly ILogger<ReplicationClientService> _logger;
         private readonly ReplicationClientOptions _options;
         private readonly HttpClient _httpClient;
+        private FSDirectory? _replicaDirectory;
 
         public ReplicationClientService(
             ILogger<ReplicationClientService> logger,
@@ -30,8 +31,8 @@ namespace ReplicationClientWeb.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var replicaDirectory = FSDirectory.Open(_options.IndexPath);
-            var handler = new IndexReplicationHandler(replicaDirectory, null);
+            _replicaDirectory = FSDirectory.Open(_options.IndexPath);
+            var handler = new IndexReplicationHandler(_replicaDirectory, null);
             var factory = new PerSessionDirectoryFactory(_options.TempPath);
             var replicator = new HttpReplicator(_options.ServerUrl, _httpClient);
             var client = new ReplicationClient(replicator, handler, factory);
@@ -47,7 +48,7 @@ namespace ReplicationClientWeb.Services
 
                     try
                     {
-                        using var reader = DirectoryReader.Open(replicaDirectory);
+                        using var reader = DirectoryReader.Open(_replicaDirectory);
                         _logger.LogInformation("Client index now has {DocCount} docs", reader.NumDocs);
                     }
                     catch (Exception ex)
@@ -60,8 +61,13 @@ namespace ReplicationClientWeb.Services
                     _logger.LogError(ex, "Replication failed");
                 }
 
-                await Task.Delay(10000, stoppingToken);
+                await Task.Delay(_options.PullInterval, stoppingToken);
             }
+        }
+        public override void Dispose()
+        {
+            base.Dispose();
+            _replicaDirectory?.Dispose();
         }
     }
 }
