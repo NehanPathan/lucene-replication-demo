@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ReplicationClientWeb")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3542dba661a86c33bf26f286af068dfc91087513")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20a536dc2a5ce9c1fdb4f151cf985d8830904af0")]
 [assembly: System.Reflection.AssemblyProductAttribute("ReplicationClientWeb")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ReplicationClientWeb")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

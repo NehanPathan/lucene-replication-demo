@@ -7,29 +7,33 @@ using Lucene.Net.Replicator;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Allow sync IO for Lucene's replication stream handling
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AllowSynchronousIO = true;
+});
+
+// Register Lucene replication services without Kestrel background service
 builder.Services.AddLuceneReplicationServer(options =>
 {
     options.Port = 5000;
     options.IndexPath = "./Server/Index";
-},useBackgroundService: false); // Do NOT launch Kestrel
+}, useBackgroundService: false);
 
+// Logging
 builder.Services.AddLogging(logging =>
 {
     logging.ClearProviders();
     logging.AddConsole();
-    builder.Logging.SetMinimumLevel(LogLevel.Information); 
+    builder.Logging.SetMinimumLevel(LogLevel.Information);
 });
 
 var app = builder.Build();
 
-
-// Access the replicator from DI
+// Get replicator instance
 var replicator = app.Services.GetRequiredService<LocalReplicator>();
 
-
-// Map Lucene replication under "/lucene" base path
-Console.WriteLine("Calling MapLuceneReplicationServer...");
-
+// Register endpoint for Lucene replication
 var shardMap = new Dictionary<string, IReplicator>(StringComparer.OrdinalIgnoreCase)
 {
     { "default", replicator }
