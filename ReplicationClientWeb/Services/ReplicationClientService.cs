@@ -31,6 +31,8 @@ namespace ReplicationClientWeb.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // Optional: initial delay to ensure server has time to start
+            await WaitForServerAsync(_options.ServerUrl, stoppingToken);
             _replicaDirectory = FSDirectory.Open(_options.IndexPath);
             var handler = new IndexReplicationHandler(_replicaDirectory, null);
             var factory = new PerSessionDirectoryFactory(_options.TempPath);
@@ -69,5 +71,29 @@ namespace ReplicationClientWeb.Services
             base.Dispose();
             _replicaDirectory?.Dispose();
         }
+        private async Task WaitForServerAsync(string url, CancellationToken cancellationToken)
+{
+    var uri = new Uri(url.Replace("/default", "/default/UPDATE?version=1C")); // ping a valid endpoint
+
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync(uri, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Server is available at {Url}", url);
+                break;
+            }
+        }
+        catch
+        {
+            _logger.LogWarning("Waiting for server at {Url}...", url);
+        }
+
+        await Task.Delay(1000, cancellationToken); // Wait 1 sec before retry
+    }
+}
+
     }
 }

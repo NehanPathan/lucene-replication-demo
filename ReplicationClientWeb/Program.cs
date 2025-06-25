@@ -10,7 +10,7 @@ builder.Services.AddHttpClient();
 // Add replication client using the extension method
 builder.Services.AddLuceneReplicationClient(options =>
 {
-    options.ServerUrl = "http://localhost:5000/replicate/default";
+    options.ServerUrl = "http://localhost:5000/lucene/default";
     options.IndexPath = "./Client/Index";
     options.TempPath = "./Client/Temp";
 });

@@ -8,12 +8,19 @@ namespace ReplicationServerWorker.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddLuceneReplicationServer(this IServiceCollection services, Action<ReplicationServerOptions> configureOptions)
+        public static IServiceCollection AddLuceneReplicationServer(this IServiceCollection services, Action<ReplicationServerOptions> configureOptions, bool useBackgroundService = true)
         {
             services.Configure(configureOptions);
-             services.AddSingleton<LocalReplicator>();
-            services.AddHostedService<ReplicationServerService>();
+            services.AddSingleton<LocalReplicator>();
+
             services.AddHostedService<SampleIndexPublisherService>();
+
+            if (useBackgroundService)
+            {
+                services.AddHostedService<ReplicationServerService>();
+            }
+
+
             return services;
         }
     }

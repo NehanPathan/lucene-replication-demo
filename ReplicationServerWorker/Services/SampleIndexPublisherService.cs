@@ -30,8 +30,10 @@ public class SampleIndexPublisherService : BackgroundService
         _replicator = replicator;
     }
 
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        
         _dir = FSDirectory.Open(_options.IndexPath);
         var writer = CreateWriter(_dir);
 
@@ -42,8 +44,9 @@ public class SampleIndexPublisherService : BackgroundService
             new TextField("body", "This is a test document.", Field.Store.YES)
         });
         writer.Commit();
-        _replicator.Publish(new IndexRevision(writer));
-        _logger.LogInformation("Published initial document");
+        var rev = new IndexRevision(writer);
+        _replicator.Publish(rev);
+        _logger.LogInformation($" Published Revision Version: {rev.Version}");
 
         int counter = 2;
         while (!stoppingToken.IsCancellationRequested)
