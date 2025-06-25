@@ -1,7 +1,9 @@
 using Lucene.Net.Replicator.Http.Abstractions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using System;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 
 public class AspNetCoreReplicationRequest : IReplicationRequest
 {
@@ -13,17 +15,25 @@ public class AspNetCoreReplicationRequest : IReplicationRequest
     }
 
     public Stream InputStream => _request.Body;
-    
-    public string Method => _request.Method;
-    
-    public string Path => _request.Path;
-    
-    // Handle both GetParameter and QueryParam methods - they should return the same thing
-    public string GetParameter(string name) => _request.Query[name].FirstOrDefault();
-    
-    public string QueryParam(string name) => _request.Query[name].FirstOrDefault();
-    
-    // Handle header retrieval safely
-    public string GetHeader(string name) => _request.Headers[name].FirstOrDefault();
-}
 
+    public string Method => _request.Method;
+
+    public string Path => _request.Path;
+
+    public string QueryParam(string name)
+    {
+        if (_request.Query.TryGetValue(name, out var queryVal))
+            return queryVal.ToString();
+
+        var routeData = _request.HttpContext.GetRouteData();
+        if (routeData.Values.TryGetValue(name, out var routeVal))
+            return routeVal?.ToString();
+
+        return null;
+    }
+
+    public string GetHeader(string name)
+    {
+        return _request.Headers[name].FirstOrDefault();
+    }
+}

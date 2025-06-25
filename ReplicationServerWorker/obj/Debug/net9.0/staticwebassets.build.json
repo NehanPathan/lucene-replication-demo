@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "sa510n6WOH+mKCT1fVgInPXRF2yWI8h/6aYhz18j+2M=",
+  "Source": "ReplicationServerWorker",
+  "BasePath": "_content/ReplicationServerWorker",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
