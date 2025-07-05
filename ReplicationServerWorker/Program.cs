@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ReplicationServerWorker.Extensions;
 using Lucene.Net.Replicator;
+using ReplicationServerWorker.Shared.Lucene;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,13 @@ builder.Services.AddLogging(logging =>
     logging.AddConsole();
     builder.Logging.SetMinimumLevel(LogLevel.Information);
 });
+
+builder.Services.AddLucene()
+    .AddIndex("default", options =>
+    {
+        options.IndexPath = "./Indexes/Default";
+    });
+
 
 var app = builder.Build();
 

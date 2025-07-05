@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ReplicationServerWorker")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+20a536dc2a5ce9c1fdb4f151cf985d8830904af0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0c482f28a352f54380e83ab3b546a981673c0a15")]
 [assembly: System.Reflection.AssemblyProductAttribute("ReplicationServerWorker")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ReplicationServerWorker")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
