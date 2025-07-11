@@ -8,25 +8,42 @@ namespace ReplicationServerWorker.Shared.Lucene
 {
     public class IndexSearcherProvider : IIndexSearcherProvider
     {
+        private readonly IIndexReaderProvider _readerProvider;
         private readonly ConcurrentDictionary<string, IndexSearcher> _searchers = new();
-        private readonly IServiceProvider _sp;
-        private readonly IOptionsMonitor<LuceneIndexOptions> _options;
 
-        public IndexSearcherProvider(IServiceProvider sp, IOptionsMonitor<LuceneIndexOptions> options)
+        public IndexSearcherProvider(IIndexReaderProvider readerProvider)
         {
-            _sp = sp;
-            _options = options;
+            _readerProvider = readerProvider;
         }
 
-        public IndexSearcher Get(string name)
+        public IndexSearcher GetShared(string name)
         {
             return _searchers.GetOrAdd(name, n =>
             {
-                var config = _options.Get(n);
-                var directory = config.DirectoryFactory?.Invoke(_sp) ?? FSDirectory.Open(config.IndexPath!);
-                var reader = DirectoryReader.Open(directory);
+                var reader = _readerProvider.GetShared(n);
                 return new IndexSearcher(reader);
             });
+        }
+
+        public IndexSearcher GetSharedIfChanged(string name)
+        {
+            var existing = _searchers.GetOrAdd(name, _ =>
+            {
+                var reader = _readerProvider.GetShared(name);
+                return new IndexSearcher(reader);
+            });
+
+            var currentReader = (DirectoryReader)existing.IndexReader;
+            var maybeUpdated = DirectoryReader.OpenIfChanged(currentReader);
+
+            if (maybeUpdated != null)
+            {
+                var updatedSearcher = new IndexSearcher(maybeUpdated);
+                _searchers[name] = updatedSearcher;
+                return updatedSearcher;
+            }
+
+            return existing;
         }
     }
 }

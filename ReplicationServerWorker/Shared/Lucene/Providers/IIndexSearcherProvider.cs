@@ -4,6 +4,7 @@ namespace ReplicationServerWorker.Shared.Lucene
 {
     public interface IIndexSearcherProvider
     {
-        IndexSearcher Get(string name);
+        IndexSearcher GetShared(string name); // default
+        IndexSearcher GetSharedIfChanged(string name); // reload if underlying index changed
     }
 }

@@ -25,13 +25,17 @@ namespace ReplicationServerWorker.Shared.Lucene
                 var config = _options.Get(n);
                 var directory = config.DirectoryFactory?.Invoke(_sp) ?? FSDirectory.Open(config.IndexPath!);
 
-                // ✅ Add SnapshotDeletionPolicy
-                var deletionPolicy = new SnapshotDeletionPolicy(new KeepOnlyLastCommitDeletionPolicy());
+                var deletionPolicy = config.EffectiveDeletionPolicy;
 
-                var writerConfig = new IndexWriterConfig(LuceneVersion.LUCENE_48, config.Analyzer)
+                var writerConfig = new IndexWriterConfig(config.LuceneVersion, config.EffectiveAnalyzer)
                 {
+                    OpenMode = config.OpenMode,
                     IndexDeletionPolicy = deletionPolicy
+
                 };
+                // Apply optional values to the writer config
+                config.ApplyWriterSettings(writerConfig);
+
 
                 return new IndexWriter(directory, writerConfig);
             });
