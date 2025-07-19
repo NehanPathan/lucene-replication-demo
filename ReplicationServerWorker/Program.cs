@@ -33,6 +33,10 @@ builder.Services.AddLucene()
     .AddIndex("default", options =>
     {
         options.IndexPath = "./Indexes/Default";
+        options.ConfigureIndexWriterConfig = (sp, config) =>
+        {
+                config.MaxBufferedDocs = 100;
+        };
     });
 
 

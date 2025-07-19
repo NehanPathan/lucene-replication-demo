@@ -29,12 +29,10 @@ namespace ReplicationServerWorker.Shared.Lucene
 
                 var writerConfig = new IndexWriterConfig(config.LuceneVersion, config.EffectiveAnalyzer)
                 {
-                    OpenMode = config.OpenMode,
                     IndexDeletionPolicy = deletionPolicy
-
                 };
                 // Apply optional values to the writer config
-                config.ApplyWriterSettings(writerConfig);
+                config.ApplyWriterSettings(_sp, writerConfig);
 
 
                 return new IndexWriter(directory, writerConfig);

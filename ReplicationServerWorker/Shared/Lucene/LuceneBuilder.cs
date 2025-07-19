@@ -15,7 +15,22 @@ namespace ReplicationServerWorker.Shared.Lucene
 
         public ILuceneBuilder AddIndex(string name, Action<LuceneIndexOptions> configure)
         {
-            _services.Configure<LuceneIndexOptions>(name, configure);
+            _services.Configure<LuceneIndexOptions>(name, options =>
+            {
+                configure(options);
+                var existingConfig = options.ConfigureIndexWriterConfig;
+
+                options.ConfigureIndexWriterConfig = (sp, config) =>
+                {
+                    existingConfig?.Invoke(sp, config);
+
+                    // Now Can Add our own default logic here below 
+                    if(config.MaxBufferedDocs <= 0)
+                    {
+                        config.MaxBufferedDocs = 1000;
+                    }
+                };
+            });
             return this;
         }
     }

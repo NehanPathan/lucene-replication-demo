@@ -6,17 +6,15 @@ namespace ReplicationServerWorker.Shared.Lucene
 {
     public class AnalyzerProvider : IAnalyzerProvider
     {
-        private readonly ConcurrentDictionary<string, Analyzer> _analyzers = new();
-        private readonly IOptionsMonitor<LuceneIndexOptions> _options;
-
-        public AnalyzerProvider(IOptionsMonitor<LuceneIndexOptions> options)
+        private readonly IServiceProvider _serviceProvider;
+        public AnalyzerProvider(IServiceProvider serviceProvider)
         {
-            _options = options;
+            _serviceProvider = serviceProvider;
         }
 
         public Analyzer Get(string name)
         {
-            return _analyzers.GetOrAdd(name, n => _options.Get(n).Analyzer);
+            return _serviceProvider.GetRequiredKeyedService<Analyzer>(name);
         }
     }
 }
