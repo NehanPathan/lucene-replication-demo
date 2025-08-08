@@ -30,12 +30,16 @@ builder.Services.AddLogging(logging =>
 });
 
 builder.Services.AddLucene()
-    .AddIndex("default", options =>
+.AddIndex("default", options =>
     {
+        options.ReaderLifetime = ServiceLifetime.Singleton;
+        options.WriterLifetime = ServiceLifetime.Scoped;
+        options.SearcherLifetime = ServiceLifetime.Scoped;
         options.IndexPath = "./Indexes/Default";
+        options.EnableRefreshing = true;
         options.ConfigureIndexWriterConfig = (sp, config) =>
         {
-                config.MaxBufferedDocs = 100;
+            config.MaxBufferedDocs = 100;
         };
     });
 

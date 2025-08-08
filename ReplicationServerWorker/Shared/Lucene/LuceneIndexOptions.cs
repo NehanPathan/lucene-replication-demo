@@ -17,12 +17,16 @@ namespace ReplicationServerWorker.Shared.Lucene
 
         public Analyzer? Analyzer { get; set; }
         public LuceneVersion LuceneVersion { get; set; } = LuceneVersion.LUCENE_48;
+
+        public bool EnableRefreshing { get; set; } = false;
+
         public IndexDeletionPolicy? DeletionPolicy { get; set; }
 
-        public bool EnableSearcherRefresh { get; set; } = true;
-        public TimeSpan RefreshInterval { get; set; } = TimeSpan.FromSeconds(5);
-
         public Action<IServiceProvider, IndexWriterConfig>? ConfigureIndexWriterConfig { get; set; }
+
+        public ServiceLifetime ReaderLifetime { get; set; } = ServiceLifetime.Singleton;
+        public ServiceLifetime WriterLifetime { get; set; } = ServiceLifetime.Singleton;
+        public ServiceLifetime SearcherLifetime { get; set; } = ServiceLifetime.Singleton;
 
         // Effective fallbacks
         public Analyzer EffectiveAnalyzer => Analyzer ?? new StandardAnalyzer(LuceneVersion);

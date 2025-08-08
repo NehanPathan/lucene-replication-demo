@@ -13,22 +13,30 @@ namespace ReplicationServerWorker.Services
     {
         private readonly ILogger<SampleIndexPublisherService> _logger;
         private readonly LocalReplicator _replicator;
-        private readonly IIndexWriterProvider _writerProvider;
+        private readonly IServiceProvider _serviceProvider;
+
 
         public SampleIndexPublisherService(
             ILogger<SampleIndexPublisherService> logger,
-            IIndexWriterProvider writerProvider,
+            IServiceProvider serviceProvider,
             LocalReplicator replicator)
         {
             _logger = logger;
-            _writerProvider = writerProvider;
+            _serviceProvider = serviceProvider;
             _replicator = replicator;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var writer = _writerProvider.Get("default");
+            var writerProvider = _serviceProvider.GetRequiredService<IIndexWriterProvider>();
 
+            // if (writerProvider == null)
+            // {
+            //     _logger.LogError("Keyed IIndexWriterProvider with key 'default' not found.");
+            //     return;
+            // }
+
+            var writer = writerProvider.Get("default");
             writer.UpdateDocument(new Term("id", "1"), new Document
             {
                 new StringField("id", "1", Field.Store.YES),
