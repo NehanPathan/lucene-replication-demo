@@ -12,32 +12,28 @@ namespace ReplicationServerWorker.Shared.Lucene
         private readonly LuceneDirectory _directory;
         private readonly ServiceLifetime _lifetime;
         private readonly bool _enableRefreshing;
-        private readonly IServiceProvider _sp;
         private DirectoryReader? _cachedReader;
         private readonly object _lock = new();
         private bool _disposed;
 
-
-        public IndexReaderRegistration(string name, LuceneIndexOptions config, IServiceProvider sp)
+        public IndexReaderRegistration(string name, LuceneIndexOptions config, IServiceProvider rootSp)
         {
             _name = name;
             _lifetime = config.ReaderLifetime;
             _enableRefreshing = config.EnableRefreshing;
-            _directory = config.DirectoryFactory?.Invoke(sp) ?? FSDirectory.Open(config.IndexPath!);
-            _sp = sp;
-
+            _directory = config.DirectoryFactory?.Invoke(rootSp) ?? FSDirectory.Open(config.IndexPath!);
         }
 
-        public DirectoryReader GetReader()
+        public DirectoryReader GetReader(IServiceProvider sp)
         {
             return _lifetime switch
             {
                 ServiceLifetime.Singleton => _enableRefreshing
                     ? GetSingletonReader()
-                    : _sp.GetRequiredKeyedService<DirectoryReader>(_name),
+                    : sp.GetRequiredKeyedService<DirectoryReader>(_name),
 
                 ServiceLifetime.Scoped or ServiceLifetime.Transient =>
-                    _sp.GetRequiredKeyedService<DirectoryReader>(_name),
+                    sp.GetRequiredKeyedService<DirectoryReader>(_name),
 
                 _ => throw new NotSupportedException($"Unsupported lifetime: {_lifetime}")
             };
@@ -56,9 +52,7 @@ namespace ReplicationServerWorker.Shared.Lucene
                     var maybeUpdated = DirectoryReader.OpenIfChanged(_cachedReader);
                     if (maybeUpdated != null)
                     {
-                        if (_cachedReader is IDisposable disposable)
-                            disposable.Dispose();
-
+                        _cachedReader.Dispose();
                         _cachedReader = maybeUpdated;
                     }
                 }
@@ -80,6 +74,5 @@ namespace ReplicationServerWorker.Shared.Lucene
             _disposed = true;
             GC.SuppressFinalize(this);
         }
-
     }
 }

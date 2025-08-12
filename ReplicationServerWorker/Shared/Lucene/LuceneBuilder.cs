@@ -64,7 +64,7 @@ namespace ReplicationServerWorker.Shared.Lucene
             // Register Registrations
             _services.AddKeyedSingleton<IndexReaderRegistration>(name, (sp, _) => new IndexReaderRegistration(name, options, sp));
             _services.AddKeyedSingleton<IndexWriterRegistration>(name, (sp, _) => new IndexWriterRegistration(name, options, sp));
-            _services.AddKeyedSingleton<IndexSearcherRegistration>(name, (sp, _) => new IndexSearcherRegistration(name, options, sp));
+            _services.AddKeyedSingleton<IndexSearcherRegistration>(name, (sp, _) => new IndexSearcherRegistration(name, options));
             _services.AddKeyedSingleton<Analyzer>(name, (sp, _) => options.EffectiveAnalyzer);
 
             return this;
@@ -101,7 +101,7 @@ namespace ReplicationServerWorker.Shared.Lucene
             var name = (string)key!;
             var readerRegistration = sp.GetRequiredKeyedService<IndexReaderRegistration>(name);
 
-            return new IndexSearcher(readerRegistration.GetReader());
+            return new IndexSearcher(readerRegistration.GetReader(sp));
         }
 
 

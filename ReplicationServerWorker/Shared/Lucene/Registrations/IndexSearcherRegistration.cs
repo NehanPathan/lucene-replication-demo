@@ -8,35 +8,33 @@ namespace ReplicationServerWorker.Shared.Lucene
     public class IndexSearcherRegistration : IDisposable
     {
         private readonly string _name;
-        private readonly IServiceProvider _sp;
         private readonly ServiceLifetime _lifetime;
         private IndexSearcher? _cachedSearcher;
         private readonly object _lock = new();
         private bool _disposed;
 
-        public IndexSearcherRegistration(string name, LuceneIndexOptions config, IServiceProvider sp)
+        public IndexSearcherRegistration(string name, LuceneIndexOptions config)
         {
             _name = name;
-            _sp = sp;
             _lifetime = config.SearcherLifetime;
         }
 
-        public IndexSearcher GetSearcher()
+        public IndexSearcher GetSearcher(IServiceProvider sp)
         {
             return _lifetime switch
             {
-                ServiceLifetime.Singleton => GetSingletonSearcher(),
-                ServiceLifetime.Scoped or ServiceLifetime.Transient => _sp.GetRequiredKeyedService<IndexSearcher>(_name),
+                ServiceLifetime.Singleton => GetSingletonSearcher(sp),
+                ServiceLifetime.Scoped or ServiceLifetime.Transient => sp.GetRequiredKeyedService<IndexSearcher>(_name),
                 _ => throw new NotSupportedException($"Unsupported lifetime: {_lifetime}")
             };
         }
 
-        private IndexSearcher GetSingletonSearcher()
+        private IndexSearcher GetSingletonSearcher(IServiceProvider sp)
         {
             lock (_lock)
             {
-                var readerReg = _sp.GetRequiredKeyedService<IndexReaderRegistration>(_name);
-                var currentReader = readerReg.GetReader();
+                var readerReg = sp.GetRequiredKeyedService<IndexReaderRegistration>(_name);
+                var currentReader = readerReg.GetReader(sp);
 
                 if (_cachedSearcher?.IndexReader != currentReader)
                 {
@@ -63,6 +61,5 @@ namespace ReplicationServerWorker.Shared.Lucene
             _disposed = true;
             GC.SuppressFinalize(this);
         }
-
     }
 }

@@ -12,19 +12,17 @@ namespace ReplicationServerWorker.Shared.Lucene
         private readonly LuceneDirectory _directory;
         private readonly IndexWriterConfig _writerConfig;
         private readonly ServiceLifetime _lifetime;
-        private readonly IServiceProvider _sp;
 
         private IndexWriter? _cachedWriter;
         private readonly object _lock = new();
         private bool _disposed;
 
-        public IndexWriterRegistration(string name, LuceneIndexOptions config, IServiceProvider sp)
+        public IndexWriterRegistration(string name, LuceneIndexOptions config, IServiceProvider rootSp)
         {
             _name = name;
-            _sp = sp;
             _lifetime = config.WriterLifetime;
 
-            _directory = config.DirectoryFactory?.Invoke(sp)
+            _directory = config.DirectoryFactory?.Invoke(rootSp)
                          ?? FSDirectory.Open(config.IndexPath!);
 
             _writerConfig = new IndexWriterConfig(config.LuceneVersion, config.EffectiveAnalyzer)
@@ -32,17 +30,16 @@ namespace ReplicationServerWorker.Shared.Lucene
                 IndexDeletionPolicy = config.EffectiveDeletionPolicy
             };
 
-            config.ApplyWriterSettings(sp, _writerConfig);
-
+            config.ApplyWriterSettings(rootSp, _writerConfig);
         }
 
-        public IndexWriter GetWriter()
+        public IndexWriter GetWriter(IServiceProvider sp)
         {
             return _lifetime switch
             {
                 ServiceLifetime.Singleton => GetSingletonWriter(),
                 ServiceLifetime.Scoped or ServiceLifetime.Transient =>
-                    _sp.GetRequiredKeyedService<IndexWriter>(_name),
+                    sp.GetRequiredKeyedService<IndexWriter>(_name),
                 _ => throw new NotSupportedException($"Unsupported lifetime: {_lifetime}")
             };
         }
@@ -61,7 +58,10 @@ namespace ReplicationServerWorker.Shared.Lucene
                     }
                     catch (LockObtainFailedException ex)
                     {
-                        throw new InvalidOperationException("IndexWriter lock failed. Is another process writing to the index?", ex);
+                        throw new InvalidOperationException(
+                            "IndexWriter lock failed. Is another process writing to the index?",
+                            ex
+                        );
                     }
                 }
             }

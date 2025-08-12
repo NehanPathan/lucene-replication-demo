@@ -14,7 +14,7 @@ namespace ReplicationServerWorker.Shared.Lucene
         public IndexWriter Get(string name)
         {
             var registration = _sp.GetRequiredKeyedService<IndexWriterRegistration>(name);
-            return registration.GetWriter();
+            return registration.GetWriter(_sp);
         }
     }
 }
